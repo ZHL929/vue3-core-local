@@ -328,12 +328,13 @@ export function toRefs<T extends object>(object: T): ToRefs<T> {
     console.warn(`toRefs() expects a reactive object but received a plain one.`)
   }
   const ret: any = isArray(object) ? new Array(object.length) : {}
+  // 其实就是把reactive 对象的每一个属性都变成了ref 对象循环 调用了propertyToRef
   for (const key in object) {
     ret[key] = propertyToRef(object, key)
   }
   return ret
 }
-
+// 类ref 对象只是做了值的改变 并未处理 收集依赖 和 触发依赖的过程 所以 普通对象无法更新视图
 class ObjectRefImpl<T extends object, K extends keyof T> {
   public readonly __v_isRef = true
 
@@ -432,6 +433,7 @@ export function toRef(
   key?: string,
   defaultValue?: unknown
 ): Ref {
+  // 如果是ref 对象直接返回 否则 调用  propertyToRef方法 创建一个类ref 对象
   if (isRef(source)) {
     return source
   } else if (isFunction(source)) {
@@ -449,6 +451,7 @@ function propertyToRef(
   defaultValue?: unknown
 ) {
   const val = source[key]
+  // 如果是ref 对象直接返回 否则调用  ObjectRefImpl 创建一个类ref 对象
   return isRef(val)
     ? val
     : (new ObjectRefImpl(source, key, defaultValue) as any)

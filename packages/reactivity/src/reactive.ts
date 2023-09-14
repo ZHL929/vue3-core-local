@@ -362,6 +362,7 @@ export function isProxy(value: unknown): boolean {
  * @param observed - The object for which the "raw" value is requested.
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#toraw}
  */
+// 通过  ReactiveFlags 枚举值 取出 proxy 对象的 原始对象  RAW = '__v_raw'
 export function toRaw<T>(observed: T): T {
   const raw = observed && (observed as Target)[ReactiveFlags.RAW]
   return raw ? toRaw(raw) : observed
