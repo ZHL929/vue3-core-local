@@ -170,7 +170,7 @@ export function watch<T = any, Immediate extends Readonly<boolean> = false>(
 }
 
 function doWatch(
-  source: WatchSource | WatchSource[] | WatchEffect | object,
+  source: WatchSource | WatchSource[] | WatchEffect | object, 
   cb: WatchCallback | null,
   { immediate, deep, flush, onTrack, onTrigger }: WatchOptions = EMPTY_OBJ
 ): WatchStopHandle {
@@ -197,21 +197,24 @@ function doWatch(
         `a reactive object, or an array of these types.`
     )
   }
-
+// 格式化传入的四种模式
   const instance =
     getCurrentScope() === currentInstance?.scope ? currentInstance : null
   // const instance = currentInstance
-  let getter: () => any
+  let getter: () => any  // 初始化
   let forceTrigger = false
   let isMultiSource = false
-
+// 如果是ref对象
   if (isRef(source)) {
-    getter = () => source.value
+    // 创建一个getter 函数并且读取了ref 对象的 value 属性
+    getter = () => source.value 
     forceTrigger = isShallow(source)
   } else if (isReactive(source)) {
+    // 如果是 reactive 对象直接返回一个 getter 函数 并且设置deep 为true
     getter = () => source
     deep = true
   } else if (isArray(source)) {
+    // 如果是数组 就遍历 该数组 然后处理里面的ref 与 reactive
     isMultiSource = true
     forceTrigger = source.some(s => isReactive(s) || isShallow(s))
     getter = () =>
@@ -227,6 +230,7 @@ function doWatch(
         }
       })
   } else if (isFunction(source)) {
+    // 如果传入的是一个函数，则会判断cb是否存在，getter 就会对 source 进行简单的封装 
     if (cb) {
       // getter with cb
       getter = () =>
@@ -267,7 +271,7 @@ function doWatch(
       return val
     }
   }
-
+  // 处理 deep 深度监听
   if (cb && deep) {
     const baseGetter = getter
     getter = () => traverse(baseGetter())
@@ -305,14 +309,14 @@ function doWatch(
 
   let oldValue: any = isMultiSource
     ? new Array((source as []).length).fill(INITIAL_WATCHER_VALUE)
-    : INITIAL_WATCHER_VALUE
+    : INITIAL_WATCHER_VALUE // 初始化旧值
   const job: SchedulerJob = () => {
     if (!effect.active) {
       return
     }
     if (cb) {
       // watch(source, cb)
-      const newValue = effect.run()
+      const newValue = effect.run() // 小满1
       if (
         deep ||
         forceTrigger ||
@@ -328,16 +332,19 @@ function doWatch(
           cleanup()
         }
         callWithAsyncErrorHandling(cb, instance, ErrorCodes.WATCH_CALLBACK, [
-          newValue,
+          newValue, //小满1
           // pass undefined as the old value when it's changed for the first time
+          // 第一次执行旧值 是 undefined 或者是空数组
           oldValue === INITIAL_WATCHER_VALUE
             ? undefined
             : isMultiSource && oldValue[0] === INITIAL_WATCHER_VALUE
             ? []
-            : oldValue,
+            : oldValue,//小满
           onCleanup
         ])
+        //直接赋值 如果是对象就直接引用了 所以新值 和旧值是一样的
         oldValue = newValue
+        // oldValue 小满1
       }
     } else {
       // watchEffect
@@ -351,8 +358,9 @@ function doWatch(
 
   let scheduler: EffectScheduler
   if (flush === 'sync') {
-    scheduler = job as any // the scheduler function gets called directly
+    scheduler = job as any // the scheduler function gets called directly 调度程序函数被直接调用
   } else if (flush === 'post') {
+    // 组件更新之后执行 queuePostRenderEffect
     scheduler = () => queuePostRenderEffect(job, instance && instance.suspense)
   } else {
     // default: 'pre'
@@ -373,7 +381,8 @@ function doWatch(
     if (immediate) {
       job()
     } else {
-      oldValue = effect.run()
+      // 对旧值做初始化
+      oldValue = effect.run() //小满1
     }
   } else if (flush === 'post') {
     queuePostRenderEffect(

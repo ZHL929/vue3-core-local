@@ -32,7 +32,7 @@ export class ComputedRefImpl<T> {
   public readonly __v_isRef = true
   public readonly [ReactiveFlags.IS_READONLY]: boolean = false
 
-  public _dirty = true
+  public _dirty = true // 是否是脏的，是否需要重新计算
   public _cacheable: boolean
 
   constructor(
@@ -41,6 +41,8 @@ export class ComputedRefImpl<T> {
     isReadonly: boolean,
     isSSR: boolean
   ) {
+    // 依赖变化了，并且脏值是false
+    // effect(()=>{依赖函数}) 依赖没变这个不走
     this.effect = new ReactiveEffect(getter, () => {
       if (!this._dirty) {
         this._dirty = true
@@ -56,9 +58,10 @@ export class ComputedRefImpl<T> {
     // the computed ref may get wrapped by other proxies e.g. readonly() #3376
     const self = toRaw(this)
     trackRefValue(self)
+    // 如果_dirty 是true 那就重新计算 如果值没变就不用重新计算 直接返回
     if (self._dirty || !self._cacheable) {
       self._dirty = false
-      self._value = self.effect.run()!
+      self._value = self.effect.run()! // 读取返回的值
     }
     return self._value
   }
@@ -114,20 +117,32 @@ export function computed<T>(
   debugOptions?: DebuggerOptions,
   isSSR = false
 ) {
+  // computed({
+  //   get(){
+
+  //   },
+  //   set(){
+
+  //   }
+  // })
+  // computed(()=>{
+  //   a.age
+  // })
+  // 格式化参数
   let getter: ComputedGetter<T>
   let setter: ComputedSetter<T>
-
+  // 如果传过来的是一个函数，那么就是只读的
   const onlyGetter = isFunction(getterOrOptions)
   if (onlyGetter) {
-    getter = getterOrOptions
-    setter = __DEV__
+    getter = getterOrOptions // 我们传过来的函数赋值给getter
+    setter = __DEV__ // 不支持设置值 不然会报错
       ? () => {
           console.warn('Write operation failed: computed value is readonly')
         }
       : NOOP
   } else {
-    getter = getterOrOptions.get
-    setter = getterOrOptions.set
+    getter = getterOrOptions.get // 如果是options是可读的
+    setter = getterOrOptions.set // 如果是options是可以设置值的
   }
 
   const cRef = new ComputedRefImpl(getter, setter, onlyGetter || !setter, isSSR)

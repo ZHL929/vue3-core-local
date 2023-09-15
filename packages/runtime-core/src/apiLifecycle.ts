@@ -69,7 +69,23 @@ export const createHook =
     // post-create lifecycle registrations are noops during SSR (except for serverPrefetch)
     (!isInSSRComponentSetup || lifecycle === LifecycleHooks.SERVER_PREFETCH) &&
     injectHook(lifecycle, (...args: unknown[]) => hook(...args), target)
-
+    // LifecycleHooks 对应的枚举
+    // export const enum LifecycleHooks {
+    //   BEFORE_CREATE = 'bc',
+    //   CREATED = 'c',
+    //   BEFORE_MOUNT = 'bm',
+    //   MOUNTED = 'm',
+    //   BEFORE_UPDATE = 'bu',
+    //   UPDATED = 'u',
+    //   BEFORE_UNMOUNT = 'bum',
+    //   UNMOUNTED = 'um',
+    //   DEACTIVATED = 'da',
+    //   ACTIVATED = 'a',
+    //   RENDER_TRIGGERED = 'rtg',
+    //   RENDER_TRACKED = 'rtc',
+    //   ERROR_CAPTURED = 'ec',
+    //   SERVER_PREFETCH = 'sp'
+    // }
 export const onBeforeMount = createHook(LifecycleHooks.BEFORE_MOUNT)
 export const onMounted = createHook(LifecycleHooks.MOUNTED)
 export const onBeforeUpdate = createHook(LifecycleHooks.BEFORE_UPDATE)
