@@ -32,9 +32,11 @@ export const NULL_DYNAMIC_COMPONENT = Symbol.for('v-ndc')
  * @private
  */
 export function resolveDynamicComponent(component: unknown): VNodeTypes {
+  // 如果component是字符串去做处理
   if (isString(component)) {
     return resolveAsset(COMPONENTS, component, false) || component
   } else {
+    // 如果是对象直接返回 然后调用 render 重新 patch 重新去创建组件
     // invalid types will fallthrough to createVNode and raise warning
     return (component || NULL_DYNAMIC_COMPONENT) as any
   }
@@ -76,13 +78,13 @@ function resolveAsset(type: typeof FILTERS, name: string): Function | undefined
 // implementation
 function resolveAsset(
   type: AssetTypes,
-  name: string,
+  name: string, // 组件的名称
   warnMissing = true,
   maybeSelfReference = false
 ) {
-  const instance = currentRenderingInstance || currentInstance
+  const instance = currentRenderingInstance || currentInstance //获取组件实例
   if (instance) {
-    const Component = instance.type
+    const Component = instance.type // 当前组件的render setup template
 
     // explicit self name has highest priority
     if (type === COMPONENTS) {
@@ -99,12 +101,14 @@ function resolveAsset(
         return Component
       }
     }
-
+    // res 当前要切换的组件
     const res =
       // local registration
       // check instance[type] first which is resolved for options API
+      // 局部注册
       resolve(instance[type] || (Component as ComponentOptions)[type], name) ||
       // global registration
+      // 全局注册
       resolve(instance.appContext[type], name)
 
     if (!res && maybeSelfReference) {
