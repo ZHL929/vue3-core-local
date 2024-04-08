@@ -64,6 +64,7 @@ const resolveTarget = <T = RendererElement>(
 
 export const TeleportImpl = {
   __isTeleport: true,
+  // 创建 更新
   process(
     n1: TeleportVNode | null,
     n2: TeleportVNode,
@@ -103,6 +104,7 @@ export const TeleportImpl = {
         : createText(''))
       insert(placeholder, container, anchor)
       insert(mainAnchor, container, anchor)
+      // 通过 resolveTarget 函数 获取了props.to 和 querySelect 获取了目标元素
       const target = (n2.target = resolveTarget(n2.props, querySelector))
       const targetAnchor = (n2.targetAnchor = createText(''))
       if (target) {
@@ -113,9 +115,11 @@ export const TeleportImpl = {
         warn('Invalid Teleport target on mount:', target, `(${typeof target})`)
       }
 
+      // 往目标元素挂载节点
       const mount = (container: RendererElement, anchor: RendererNode) => {
         // Teleport *always* has Array children. This is enforced in both the
         // compiler and vnode children normalization.
+        // 挂载子节点
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           mountChildren(
             children as VNodeArrayChildren,
@@ -129,13 +133,15 @@ export const TeleportImpl = {
           )
         }
       }
-
+      // disabled情况就在原来的位置挂载
       if (disabled) {
         mount(container, mainAnchor)
       } else if (target) {
+        // 挂载到target 目标位置
         mount(target, targetAnchor)
       }
     } else {
+      // 更新逻辑
       // update content
       n2.el = n1.el
       const mainAnchor = (n2.anchor = n1.anchor)!
@@ -179,6 +185,7 @@ export const TeleportImpl = {
         if (!wasDisabled) {
           // enabled -> disabled
           // move into main container
+          // 新节点disabled 为 true  旧节点disabled false 就把子节点移动回容器
           moveTeleport(
             n2,
             container,
@@ -219,6 +226,7 @@ export const TeleportImpl = {
         } else if (wasDisabled) {
           // disabled -> enabled
           // move into teleport target
+          // 如果新节点disabled 为 false 旧节点为true 就把子节点移动到目标元素
           moveTeleport(
             n2,
             target,
@@ -233,6 +241,7 @@ export const TeleportImpl = {
     updateCssVars(n2)
   },
 
+  // 删除逻辑
   remove(
     vnode: VNode,
     parentComponent: ComponentInternalInstance | null,
@@ -251,6 +260,7 @@ export const TeleportImpl = {
     if (doRemove || !isTeleportDisabled(props)) {
       hostRemove(anchor!)
       if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 遍历teleport 子节点进行unmount方法去移除
         for (let i = 0; i < (children as VNode[]).length; i++) {
           const child = (children as VNode[])[i]
           unmount(
